@@ -6,6 +6,8 @@ const { createApp } = require('./app');
 
 const { createTicketService } = require('./ticket-service');
 
+const { startResetJob } = require('./reset-job');
+
  
 
 async function main() {
@@ -15,6 +17,8 @@ async function main() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
 
   const pool = createPool();
+
+  let job;
 
   try {
 
@@ -38,6 +42,8 @@ async function main() {
 
     });
 
+    job = startResetJob(service, settings);
+
     console.log(`Office Queue API listening on port ${port}`);
 
     let stopping = false;
@@ -48,6 +54,8 @@ async function main() {
 
       stopping = true;
 
+      await job.stop();
+
       server.close(async () => { await pool.end(); });
 
     }
@@ -57,6 +65,8 @@ async function main() {
     process.once('SIGTERM', shutdown);
 
   } catch (error) {
+
+    if (job) await job.stop();
 
     await pool.end();
 
