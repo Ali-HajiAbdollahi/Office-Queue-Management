@@ -1,11 +1,6 @@
-backend/node_modules/
-
-backend/.env
-
+node_modules/
+.env
+.env.*
+!.env.example
 coverage/
-
 *.log
-
-backend/.env.*
-
-!backend/.env.example
