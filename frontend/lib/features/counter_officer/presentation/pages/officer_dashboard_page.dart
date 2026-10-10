@@ -9,6 +9,7 @@ import '../../domain/usecases/complete_ticket.dart';
 import '../blocs/officer_dashboard/officer_dashboard_cubit.dart';
 import '../blocs/officer_dashboard/officer_dashboard_state.dart';
 import '../widgets/counter_header_card.dart';
+import '../widgets/error_view.dart';
 import '../widgets/now_serving_card.dart';
 import '../widgets/up_next_card.dart';
 
@@ -34,17 +35,32 @@ class OfficerDashboardPage extends StatelessWidget {
 class _OfficerDashboardView extends StatelessWidget {
   const _OfficerDashboardView();
 
+  /// Messaggio usato dal Cubit quando la coda è vuota.
+  /// Non è un errore tecnico, quindi lo mostriamo con un colore neutro.
+  static const _noTicketsMessage = 'No tickets available';
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
 
     return BlocConsumer<OfficerDashboardCubit, OfficerDashboardState>(
+      // La snackbar serve per gli errori delle azioni (Call Next / Done).
+      // Se la connessione è caduta (status failure) c'è già ErrorView.
       listenWhen: (prev, curr) =>
-          prev.errorMessage != curr.errorMessage && curr.errorMessage != null,
+          prev.errorMessage != curr.errorMessage &&
+          curr.errorMessage != null &&
+          curr.status != OfficerDashboardStatus.failure,
       listener: (context, state) {
+        final isNoTickets = state.errorMessage == _noTicketsMessage;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ..showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor:
+                  isNoTickets ? null : Theme.of(context).colorScheme.error,
+            ),
+          );
       },
       builder: (context, state) {
         final cubit = context.read<OfficerDashboardCubit>();
@@ -55,32 +71,42 @@ class _OfficerDashboardView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('QueueFlow',
-                    style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                    style:
+                        text.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                 Text('MY DESK',
                     style: text.labelSmall?.copyWith(
                         color: AppColors.textSecondary, letterSpacing: 1.2)),
               ],
             ),
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              CounterHeaderCard(counter: state.counter),
-              const SizedBox(height: 16),
-              NowServingCard(
-                ticket: state.currentTicket,
-                canComplete: state.canComplete,
-                onComplete: cubit.complete,
+          body: switch (state.status) {
+            OfficerDashboardStatus.loading =>
+              const Center(child: CircularProgressIndicator()),
+            OfficerDashboardStatus.failure => ErrorView(
+                message: state.errorMessage ?? 'Something went wrong',
+                onRetry: cubit.start,
               ),
-              const SizedBox(height: 16),
-              UpNextCard(
-                queue: state.queue,
-                canCallNext: state.canCallNext,
-                isServing: state.isServing,
-                onCallNext: cubit.callNext,
+            OfficerDashboardStatus.ready => ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  CounterHeaderCard(counter: state.counter),
+                  const SizedBox(height: 16),
+                  NowServingCard(
+                    ticket: state.currentTicket,
+                    canComplete: state.canComplete,
+                    onComplete: cubit.complete,
+                  ),
+                  const SizedBox(height: 16),
+                  UpNextCard(
+                    queue: state.queue,
+                    canCallNext: state.canCallNext,
+                    isServing: state.isServing,
+                    isBusy: state.isBusy,
+                    onCallNext: cubit.callNext,
+                  ),
+                ],
               ),
-            ],
-          ),
+          },
         );
       },
     );

@@ -15,6 +15,8 @@ class OfficerDashboardCubit extends Cubit<OfficerDashboardState> {
 
   StreamSubscription? _ticketSub;
   StreamSubscription? _queueSub;
+  bool _ticketLoaded = false;
+  bool _queueLoaded = false;
 
   OfficerDashboardCubit({
     required Counter counter,
@@ -29,26 +31,59 @@ class OfficerDashboardCubit extends Cubit<OfficerDashboardState> {
   void start() {
     _ticketSub?.cancel();
     _queueSub?.cancel();
+    _ticketLoaded = false;
+    _queueLoaded = false;
+    emit(state.copyWith(
+      status: OfficerDashboardStatus.loading,
+      clearError: true,
+    ));
 
     _ticketSub = _repository.watchCurrentTicket(state.counter.id).listen(
-      (ticket) => emit(ticket == null
-          ? state.copyWith(clearCurrentTicket: true)
-          : state.copyWith(currentTicket: ticket)),
-      onError: (_) => emit(state.copyWith(errorMessage: 'Connection error')),
+      (ticket) {
+        _ticketLoaded = true;
+        emit(ticket == null
+            ? state.copyWith(
+                clearCurrentTicket: true, status: _statusAfterData())
+            : state.copyWith(
+                currentTicket: ticket, status: _statusAfterData()));
+      },
+      onError: (_) => _fail(),
     );
 
     _queueSub = _repository.watchQueue().listen(
-      (queue) => emit(state.copyWith(queue: queue)),
-      onError: (_) => emit(state.copyWith(errorMessage: 'Connection error')),
+      (queue) {
+        _queueLoaded = true;
+        emit(state.copyWith(queue: queue, status: _statusAfterData()));
+      },
+      onError: (_) => _fail(),
     );
   }
+
+  OfficerDashboardStatus _statusAfterData() =>
+      state.status == OfficerDashboardStatus.loading &&
+              _ticketLoaded &&
+              _queueLoaded
+          ? OfficerDashboardStatus.ready
+          : state.status;
+
+  void _fail() => emit(state.copyWith(
+        status: OfficerDashboardStatus.failure,
+        errorMessage: 'Connection error',
+      ));
 
   Future<void> callNext() async {
     if (!state.canCallNext) return;
     emit(state.copyWith(isBusy: true, clearError: true));
     try {
-      await _callNextTicket(state.counter.id);
-      emit(state.copyWith(isBusy: false));
+      final ticket = await _callNextTicket(state.counter.id);
+      if (ticket == null) {
+        // Risposta valida ma nessun ticket in coda.
+        emit(state.copyWith(
+            isBusy: false, errorMessage: 'No tickets available'));
+      } else {
+        // Mostra subito il ticket restituito dalla risposta.
+        emit(state.copyWith(isBusy: false, currentTicket: ticket));
+      }
     } catch (_) {
       emit(state.copyWith(isBusy: false, errorMessage: 'Could not call next'));
     }
@@ -62,7 +97,10 @@ class OfficerDashboardCubit extends Cubit<OfficerDashboardState> {
       await _completeTicket(ticket.id);
       emit(state.copyWith(isBusy: false));
     } catch (_) {
-      emit(state.copyWith(isBusy: false, errorMessage: 'Could not complete'));
+      emit(state.copyWith(
+        isBusy: false,
+        errorMessage: 'Could not complete the ticket. Try again.',
+      ));
     }
   }
 
