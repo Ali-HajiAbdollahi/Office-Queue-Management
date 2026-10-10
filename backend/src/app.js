@@ -28,6 +28,8 @@ function createApp(service, { corsOrigin = 'http://localhost:8080', logger = con
 
   app.get('/api/services', async (_req, res) => res.json({ services: await service.listServices() }));
 
+  app.get('/api/queues', async (_req, res) => res.json(await service.getQueues()));
+
   app.post('/api/tickets', async (req, res) => {
 
     if (!req.is('application/json')) throw new HttpError(415, 'Content-Type must be application/json');

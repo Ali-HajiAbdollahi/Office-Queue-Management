@@ -64,7 +64,39 @@ function createTicketService(pool, options = {}) {
 
       );
 
-      return { ticket: inserted.rows[0] };
+      const queue = await client.query(
+
+        `SELECT count(*)::integer AS length FROM ${t.tickets}
+
+         WHERE service_id = $1 AND status = 'waiting' AND business_day = $2::date`, [serviceId, day]
+
+      );
+
+      return { ticket: inserted.rows[0], queueLength: queue.rows[0].length };
+
+    });
+
+  }
+
+  async function getQueues() {
+
+    return transaction(async (client, { day }) => {
+
+      const result = await client.query(
+
+        `SELECT s.id AS "serviceId", s.tag, s.service_time AS "serviceTime",
+
+                count(q.id)::integer AS "queueLength"
+
+         FROM ${t.services} s LEFT JOIN ${t.tickets} q
+
+           ON q.service_id = s.id AND q.status = 'waiting' AND q.business_day = $1::date
+
+         GROUP BY s.id ORDER BY s.id`, [day]
+
+      );
+
+      return { businessDay: day, queues: result.rows };
 
     });
 
@@ -88,7 +120,7 @@ function createTicketService(pool, options = {}) {
 
   }
 
-  return { issueTicket, resetIfNeeded, listServices };
+  return { issueTicket, getQueues, resetIfNeeded, listServices };
 
 }
 
