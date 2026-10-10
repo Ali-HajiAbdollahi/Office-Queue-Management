@@ -1,0 +1,11 @@
+backend/node_modules/
+
+backend/.env
+
+coverage/
+
+*.log
+
+backend/.env.*
+
+!backend/.env.example
