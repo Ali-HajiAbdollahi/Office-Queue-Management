@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/enums/ticket_status.dart';
 import '../../domain/repositories/customer_repository.dart';
@@ -10,18 +11,30 @@ class CustomerCubit extends Cubit<CustomerState> {
   final CustomerRepository repository;
   Timer? _pollingTimer;
 
+  static const String _ticketKey = 'active_ticket_id';
+
   CustomerCubit({required this.repository}) : super(CustomerInitial());
 
   Future<void> loadInitialData() async {
     emit(CustomerLoading());
     try {
       final services = await repository.getServices();
-      final activeTicket = await repository.getActiveTicket();
-      emit(CustomerLoaded(services: services, activeTicket: activeTicket));
 
-      if (activeTicket != null) {
-        _startPolling(activeTicket.id);
+      final prefs = await SharedPreferences.getInstance();
+      final savedTicketId = prefs.getInt(_ticketKey);
+
+      if (savedTicketId != null) {
+        try {
+          final ticket = await repository.getTicketStatus(savedTicketId);
+          emit(CustomerLoaded(services: services, activeTicket: ticket));
+          _startPolling(ticket.id);
+          return;
+        } catch (_) {
+          await prefs.remove(_ticketKey);
+        }
       }
+
+      emit(CustomerLoaded(services: services));
     } catch (e) {
       emit(CustomerError(e.toString()));
     }
@@ -36,6 +49,9 @@ class CustomerCubit extends Cubit<CustomerState> {
     emit(CustomerLoading());
     try {
       final newTicket = await repository.issueTicket(serviceId);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_ticketKey, newTicket.id);
+
       emit(
         CustomerLoaded(
           services: currentState.services,
@@ -90,6 +106,9 @@ class CustomerCubit extends Cubit<CustomerState> {
     try {
       await repository.cancelTicket(ticketId);
       _pollingTimer?.cancel();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_ticketKey);
+
       emit(CustomerLoaded(services: currentState.services, activeTicket: null));
     } catch (e) {
       emit(CustomerError(e.toString()));

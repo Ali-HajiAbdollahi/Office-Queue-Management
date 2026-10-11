@@ -34,7 +34,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
       return (response.data as List).map((json) {
         return ServiceEntity(
           id: int.parse(json['id'].toString()),
-          tag: json['name'] ?? 'Unknown Service',
+          tag: json['tag'] ?? 'Unknown Service',
           serviceTime: json['service_time'] ?? 0,
         );
       }).toList();
@@ -83,9 +83,11 @@ class CustomerRepositoryImpl implements CustomerRepository {
       code: json['code'] ?? 'A-000',
       serviceId: serviceId ?? int.parse(json['service_id'].toString()),
       issuedAt: DateTime.now(),
-      status: json['status'] == 'called'
-          ? TicketStatus.called
-          : TicketStatus.waiting,
+      status: switch (json['status']) {
+        'called' => TicketStatus.called,
+        'completed' => TicketStatus.completed,
+        _ => TicketStatus.waiting,
+      },
       counterId: json['counter_id'] == null
           ? null
           : int.parse(json['counter_id'].toString()),
