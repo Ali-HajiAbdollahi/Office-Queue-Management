@@ -37,6 +37,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   dio: ^5.11.1
   shared_preferences: ^2.5.3
+  equatable: ^3.0.0
 
 dev_dependencies:
   flutter_test:
