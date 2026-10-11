@@ -35,8 +35,7 @@ class UpNextCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('Up Next',
-                    style: text.titleMedium?.copyWith(fontSize: 20)),
+                Text('Up Next', style: text.titleLarge),
                 const SizedBox(width: AppSpacing.sm),
                 Container(
                   padding: const EdgeInsets.symmetric(

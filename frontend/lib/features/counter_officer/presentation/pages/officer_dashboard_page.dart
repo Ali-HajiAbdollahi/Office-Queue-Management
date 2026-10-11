@@ -71,9 +71,7 @@ class _OfficerDashboardView extends StatelessWidget {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('QueueFlow',
-                    style: text.titleMedium?.copyWith(
-                        fontSize: 20, fontWeight: FontWeight.w700)),
+                Text('QueueFlow', style: text.titleLarge),
                 Text('MY DESK',
                     style: text.labelSmall?.copyWith(letterSpacing: 1.2)),
               ],

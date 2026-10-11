@@ -35,12 +35,12 @@ class CounterHeaderCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.circle, size: 10, color: AppColors.tertiary),
+                const Icon(Icons.circle, size: 10, color: AppColors.success),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   'ACTIVE & ONLINE',
                   style: text.labelSmall?.copyWith(
-                    color: AppColors.tertiary,
+                    color: AppColors.success,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
                   ),

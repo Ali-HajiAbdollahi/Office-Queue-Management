@@ -85,7 +85,7 @@ class NowServingCard extends StatelessWidget {
             child: Text(
               t.code,
               textAlign: TextAlign.center,
-              style: text.displayLarge,
+              style: text.displayMedium,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -110,7 +110,7 @@ class NowServingCard extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: canComplete ? onComplete : null,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.tertiary,
+                backgroundColor: AppColors.success,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),

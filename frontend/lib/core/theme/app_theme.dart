@@ -96,6 +96,12 @@ abstract final class AppTheme {
         fontWeight: FontWeight.w700,
         color: AppColors.secondary,
       ),
+      displayMedium: const TextStyle(
+        fontFamily: 'Hanken Grotesk',
+        fontSize: 45,
+        fontWeight: FontWeight.w700,
+        color: AppColors.secondary,
+      ),
       headlineLarge: const TextStyle(
         fontFamily: 'Hanken Grotesk',
         fontSize: 32,
@@ -106,6 +112,12 @@ abstract final class AppTheme {
         fontFamily: 'Hanken Grotesk',
         fontSize: 24,
         fontWeight: FontWeight.w700,
+        color: AppColors.secondary,
+      ),
+      titleLarge: const TextStyle(
+        fontFamily: 'Hanken Grotesk',
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
         color: AppColors.secondary,
       ),
       titleMedium: const TextStyle(
