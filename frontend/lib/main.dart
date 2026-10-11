@@ -1,36 +1,51 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
+import 'core/theme/app_theme.dart';
+import 'features/customer/data/repositories/customer_repository_impl.dart';
+import 'features/customer/domain/repositories/customer_repository.dart';
+import 'features/customer/presentation/pages/customer_page.dart';
+import 'features/role_selection/presentation/pages/role_selection_page.dart';
+
 void main() {
-  runApp(const MyApp());
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: 'http://10.0.2.2:3000',
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+    ),
+  );
+
+  final customerRepository = CustomerRepositoryImpl(dio: dio);
+
+  runApp(MyApp(repository: customerRepository));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.repository});
+
+  final CustomerRepository repository;
+
+  static final _navigatorKey = GlobalKey<NavigatorState>();
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      title: 'Executive Queue Hub',
+      theme: AppTheme.light,
+      navigatorKey: _navigatorKey,
+      home: RoleSelectionPage(
+        onRoleSelected: (role) {
+          if (role == 'Customer') {
+            _navigatorKey.currentState!.push(
+              MaterialPageRoute<void>(
+                builder: (_) => CustomerPage(repository: repository),
+              ),
+            );
+          }
+        },
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
