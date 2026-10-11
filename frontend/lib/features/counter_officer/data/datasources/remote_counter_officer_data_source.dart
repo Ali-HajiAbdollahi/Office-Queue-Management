@@ -64,21 +64,25 @@ class RemoteCounterOfficerDataSource implements CounterOfficerDataSource {
   }
 
   Future<QueueSummary> _fetchQueue(String counterId) async {
-    final res = await _dio
-        .get<Map<String, dynamic>>('/counters/$counterId/queue-stats');
-    final json = res.data!;
-    return QueueSummary(
-      waitingCount: json['waiting_count'] as int,
-      nextTicketCode: json['next_ticket_code'] as String?,
-    );
+    // Queue statistics are hidden for this sprint.
+    // final res = await _dio.get<Map<String, dynamic>>(
+    //   '/counters/$counterId/queue-stats',
+    // );
+    // final json = res.data!;
+    // return QueueSummary(
+    //   waitingCount: json['waiting_count'] as int,
+    //   nextTicketCode: json['next_ticket_code'] as String?,
+    // );
+    return const QueueSummary(waitingCount: 0);
   }
 
   @override
   Future<TicketModel?> callNextTicket(String counterId) async {
     final names = await _serviceNames();
     try {
-      final res = await _dio
-          .post<Map<String, dynamic>>('/counters/$counterId/call-next');
+      final res = await _dio.post<Map<String, dynamic>>(
+        '/counters/$counterId/call-next',
+      );
       final json = res.data!;
       final serviceId = json['service_id'];
       final ticket = TicketModel.fromApi(

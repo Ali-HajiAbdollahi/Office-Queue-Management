@@ -72,38 +72,41 @@ class _OfficerDashboardView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('QueueFlow', style: text.titleLarge),
-                Text('MY DESK',
-                    style: text.labelSmall?.copyWith(letterSpacing: 1.2)),
+                Text(
+                  'MY DESK',
+                  style: text.labelSmall?.copyWith(letterSpacing: 1.2),
+                ),
               ],
             ),
           ),
           body: switch (state.status) {
-            OfficerDashboardStatus.loading =>
-              const Center(child: CircularProgressIndicator()),
+            OfficerDashboardStatus.loading => const Center(
+              child: CircularProgressIndicator(),
+            ),
             OfficerDashboardStatus.failure => ErrorView(
-                message: state.errorMessage ?? 'Something went wrong',
-                onRetry: cubit.start,
-              ),
+              message: state.errorMessage ?? 'Something went wrong',
+              onRetry: cubit.start,
+            ),
             OfficerDashboardStatus.ready => ListView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  CounterHeaderCard(counter: state.counter),
-                  const SizedBox(height: AppSpacing.md),
-                  NowServingCard(
-                    ticket: state.currentTicket,
-                    canComplete: state.canComplete,
-                    onComplete: cubit.complete,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  UpNextCard(
-                    queue: state.queue,
-                    canCallNext: state.canCallNext,
-                    isServing: state.isServing,
-                    isBusy: state.isBusy,
-                    onCallNext: cubit.callNext,
-                  ),
-                ],
-              ),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                CounterHeaderCard(counter: state.counter),
+                const SizedBox(height: AppSpacing.md),
+                NowServingCard(
+                  ticket: state.currentTicket,
+                  canComplete: state.canComplete,
+                  onComplete: cubit.complete,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                UpNextCard(
+                  queue: state.queue,
+                  canCallNext: state.canCallNext,
+                  isServing: state.isServing,
+                  isBusy: state.isBusy,
+                  onCallNext: cubit.callNext,
+                ),
+              ],
+            ),
           },
         );
       },
