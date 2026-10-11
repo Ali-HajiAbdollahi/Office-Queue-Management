@@ -13,32 +13,33 @@ if (TEST_DATABASE_URL) {
 const { query, closePool } = require('../../src/db');
 const { quoteIdentifier, tableNames } = require('../../src/schema');
 
-// mirrors the tables of schema_OQM (and the initial index of sql/001_customer_constraints.sql)
+// mirrors the tables of schema_OQM on Neon (columns, types, lengths and constraints).
+// Neon has no index from sql/001_customer_constraints.sql, so neither do the tests.
 async function createSchema() {
   const schema = quoteIdentifier(process.env.DB_SCHEMA);
   const t = tableNames();
   await query(`
     CREATE SCHEMA ${schema};
+    CREATE TYPE ${schema}.tkt_status AS ENUM ('waiting', 'called', 'completed');
     CREATE TABLE ${t.services} (
       id serial PRIMARY KEY,
-      tag varchar(50) NOT NULL UNIQUE,
+      tag varchar(25) NOT NULL UNIQUE,
       service_time integer NOT NULL CHECK (service_time > 0)
     );
-    CREATE UNIQUE INDEX uq_services_ticket_initial ON ${t.services} ((upper(left(btrim(tag), 1))));
     CREATE TABLE ${t.counters} (
       id serial PRIMARY KEY,
-      name varchar(50) NOT NULL
+      name varchar NOT NULL UNIQUE
     );
     CREATE TABLE ${t.counter_services} (
-      counter_id integer NOT NULL REFERENCES ${t.counters} (id) ON DELETE CASCADE,
-      service_id integer NOT NULL REFERENCES ${t.services} (id) ON DELETE CASCADE,
+      counter_id integer NOT NULL REFERENCES ${t.counters} (id),
+      service_id integer NOT NULL REFERENCES ${t.services} (id),
       PRIMARY KEY (counter_id, service_id)
     );
     CREATE TABLE ${t.tickets} (
       id serial PRIMARY KEY,
-      code varchar(10) NOT NULL,
+      code varchar(6) NOT NULL,
       service_id integer NOT NULL REFERENCES ${t.services} (id),
-      status varchar(20) NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'called', 'completed')),
+      status ${schema}.tkt_status NOT NULL DEFAULT 'waiting',
       issued_at timestamptz NOT NULL DEFAULT now(),
       served_at timestamptz,
       counter_id integer REFERENCES ${t.counters} (id)

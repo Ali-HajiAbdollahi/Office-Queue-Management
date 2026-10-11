@@ -97,6 +97,17 @@ describe('ticketRepository (Next customer)', { skip: db.skipReason }, () => {
       assert.equal(await repository.callNextTicket(counter), null);
     });
 
+    test('in the same queue, a ticket left waiting yesterday is skipped for today\'s first one', async () => {
+      const counter = await db.addCounter('Counter 1', [shipping]);
+      const old = await db.addTicket(shipping, 'S-0003', { daysAgo: 2 });
+      const [today] = await issue(shipping);
+
+      const called = await repository.callNextTicket(counter);
+      assert.equal(called.id, today.id);
+      assert.equal((await db.getTicketRow(old)).status, 'waiting', 'the old ticket is left untouched');
+      assert.equal(await repository.callNextTicket(counter), null);
+    });
+
     test('two counters calling at the same time never get the same ticket', async () => {
       const counter1 = await db.addCounter('Counter 1', [deposit]);
       const counter2 = await db.addCounter('Counter 2', [deposit]);

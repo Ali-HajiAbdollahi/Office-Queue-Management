@@ -153,4 +153,12 @@ describe('e2e: a customer gets a ticket and an officer calls it', { skip: db.ski
     assert.equal(res.status, 404);
     assert.equal(res.body.error.code, 'COUNTER_NOT_FOUND');
   });
+
+  // known bug: counterController only checks Number.isInteger, so the id reaches the integer column and Postgres fails
+  test('a counter id larger than the integer column returns 400', {
+    todo: 'counterController should validate the id like parseTicketId (now 500)',
+  }, async () => {
+    const res = await request(`${server.url}/counters/99999999999/call-next`, { method: 'POST' });
+    assert.equal(res.status, 400);
+  });
 });
