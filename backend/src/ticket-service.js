@@ -1,127 +1,41 @@
-const { withOfficeTransaction } = require('./office');
-
-const { tableNames } = require('./schema');
-
-const { validateServiceId, formatTicketCode, MAX_DAILY_TICKETS } = require('./validation');
-
+const ticketDao = require('./dao/ticketDao');
+const serviceDao = require('./dao/serviceDao');
+const { validateServiceId } = require('./validation');
 const { HttpError } = require('./errors');
 
-function createTicketService(pool, options = {}) {
+// codes raised by the DAOs -> HTTP errors
+const DAO_ERRORS = {
+  SERVICE_NOT_FOUND: [404, 'Service not found'],
+  SERVICE_TAG_INVALID: [409, 'Service tag must start with a letter'],
+  DAILY_LIMIT_REACHED: [409, 'Daily ticket limit reached'],
+};
 
-  const t = tableNames(options.schema);
+function toHttpError(error) {
+  const known = DAO_ERRORS[error.code];
+  return known ? new HttpError(known[0], known[1], error.code) : error;
+}
 
-  const transaction = action => withOfficeTransaction(pool, action, options);
-
+function createTicketService({ tickets = ticketDao, services = serviceDao } = {}) {
   async function issueTicket(serviceId) {
-
     validateServiceId(serviceId);
-
-    return transaction(async (client, { day, now }) => {
-
-      const { rows: [service] } = await client.query(
-
-        `SELECT id, ticket_prefix FROM ${t.services} WHERE id = $1 FOR SHARE`, [serviceId]
-
-      );
-
-      if (!service) throw new HttpError(404, 'Service not found', 'SERVICE_NOT_FOUND');
-
-      formatTicketCode(service.ticket_prefix, 1); // Check config before consuming a number.
-
-      const sequence = await client.query(
-
-        `UPDATE ${t.office_state} SET last_number = last_number + 1
-
-         WHERE singleton = true AND last_number < $1 RETURNING last_number`, [MAX_DAILY_TICKETS]
-
-      );
-
-      if (!sequence.rowCount) {
-
-        throw new HttpError(409, 'Daily ticket limit reached', 'DAILY_TICKET_LIMIT_REACHED');
-
-      }
-
-      const number = sequence.rows[0].last_number;
-
-      const code = formatTicketCode(service.ticket_prefix, number);
-
-      const inserted = await client.query(
-
-        `INSERT INTO ${t.tickets}
-
-         (code, service_id, status, issued_at, served_at, counter_id, business_day, daily_number)
-
-         VALUES ($1, $2, 'waiting', $3, NULL, NULL, $4::date, $5)
-
-         RETURNING id, code, service_id AS "serviceId", status, issued_at AS "issuedAt",
-
-                   served_at AS "servedAt", counter_id AS "counterId",
-
-                   business_day::text AS "businessDay", daily_number AS "dailyNumber"`,
-
-        [code, serviceId, now, day, number]
-
-      );
-
-      const queue = await client.query(
-
-        `SELECT count(*)::integer AS length FROM ${t.tickets}
-
-         WHERE service_id = $1 AND status = 'waiting' AND business_day = $2::date`, [serviceId, day]
-
-      );
-
-      return { ticket: inserted.rows[0], queueLength: queue.rows[0].length };
-
-    });
-
+    try {
+      const ticket = await tickets.createTicket(serviceId);
+      const queueLength = await tickets.getQueueLength(serviceId);
+      return { ticket, queueLength };
+    } catch (error) {
+      throw toHttpError(error);
+    }
   }
 
   async function getQueues() {
-
-    return transaction(async (client, { day }) => {
-
-      const result = await client.query(
-
-        `SELECT s.id AS "serviceId", s.tag, s.service_time AS "serviceTime",
-
-                count(q.id)::integer AS "queueLength"
-
-         FROM ${t.services} s LEFT JOIN ${t.tickets} q
-
-           ON q.service_id = s.id AND q.status = 'waiting' AND q.business_day = $1::date
-
-         GROUP BY s.id ORDER BY s.id`, [day]
-
-      );
-
-      return { businessDay: day, queues: result.rows };
-
-    });
-
-  }
-
-  async function resetIfNeeded() {
-
-    return transaction(async (_client, { day, reset, archived }) => ({ businessDay: day, reset, archived }));
-
+    return { queues: await tickets.getQueues() };
   }
 
   async function listServices() {
-
-    return (await pool.query(
-
-      `SELECT id, tag, service_time AS "serviceTime", ticket_prefix AS "ticketPrefix"
-
-       FROM ${t.services} ORDER BY id`
-
-    )).rows;
-
+    return services.getServices();
   }
 
-  return { issueTicket, getQueues, resetIfNeeded, listServices };
-
+  return { issueTicket, getQueues, listServices };
 }
 
 module.exports = { createTicketService };

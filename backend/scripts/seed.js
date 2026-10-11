@@ -1,29 +1,29 @@
-const { createPool } = require('../src/db');
+const { closePool } = require('../src/db');
+const { createService } = require('../src/dao/serviceDao');
 
- 
+// Demo data, not inferred from Figma. Every tag has a different initial (it is the first letter of the ticket code).
+const DEMO_SERVICES = [
+  { tag: 'Shipping', serviceTime: 5 },
+  { tag: 'Deposit', serviceTime: 8 },
+  { tag: 'Accounts', serviceTime: 10 },
+];
 
-async function seed(pool) {
-
-  // Demo data, not inferred from Figma. Existing service configuration is preserved.
-
-  await pool.query(`INSERT INTO services(tag, service_time)
-
-    VALUES ('Delivery', 5), ('Deposit', 8), ('Accounts', 10)
-
-    ON CONFLICT (tag) DO NOTHING`);
-
+// creates the demo services; the ones that already exist (or clash on the initial) are skipped
+async function seed() {
+  for (const { tag, serviceTime } of DEMO_SERVICES) {
+    try {
+      await createService(tag, serviceTime);
+      console.log(`Created service "${tag}"`);
+    } catch (error) {
+      console.log(`Skipped "${tag}": ${error.message}`);
+    }
+  }
 }
 
 if (require.main === module) {
-
-  const pool = createPool();
-
-  seed(pool).then(() => console.log('Demo services ready'))
-
+  seed().then(() => console.log('Demo services ready'))
     .catch((error) => { console.error(error.message); process.exitCode = 1; })
-
-    .finally(() => pool.end());
-
+    .finally(closePool);
 }
 
 module.exports = { seed };
