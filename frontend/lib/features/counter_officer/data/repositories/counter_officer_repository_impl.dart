@@ -16,13 +16,8 @@ class CounterOfficerRepositoryImpl implements CounterOfficerRepository {
       dataSource.watchCurrentTicket(counterId);
 
   @override
-  Stream<QueueSummary> watchQueue() =>
-      dataSource.watchWaitingTickets().map(
-            (tickets) => QueueSummary(
-              waitingCount: tickets.length,
-              nextTicketCode: tickets.isEmpty ? null : tickets.first.code,
-            ),
-          );
+  Stream<QueueSummary> watchQueue(String counterId) =>
+      dataSource.watchQueue(counterId);
 
   @override
   Future<Ticket?> callNextTicket(String counterId) =>

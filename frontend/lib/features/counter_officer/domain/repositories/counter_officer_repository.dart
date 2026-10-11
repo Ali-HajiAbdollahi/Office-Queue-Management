@@ -5,13 +5,13 @@ import '../entities/ticket.dart';
 abstract class CounterOfficerRepository {
   Future<List<Counter>> getCounters();
 
-  /// Actual ticket served by the counter. Null if no ticket is being served.
+  /// Ticket attualmente servito dal counter (null se nessuno).
   Stream<Ticket?> watchCurrentTicket(String counterId);
 
-  /// Queue status (current one + waiting ons)
-  Stream<QueueSummary> watchQueue();
+  /// Stato della coda per i servizi gestiti dal counter.
+  Stream<QueueSummary> watchQueue(String counterId);
 
-  /// Assigns the next ticket to the counter. Returns the assigned ticket or null if no ticket is available.
+  /// Assegna il prossimo ticket al counter. Null se la coda è vuota.
   Future<Ticket?> callNextTicket(String counterId);
 
   Future<void> completeTicket(String ticketId);

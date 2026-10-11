@@ -50,7 +50,7 @@ class OfficerDashboardCubit extends Cubit<OfficerDashboardState> {
       onError: (_) => _fail(),
     );
 
-    _queueSub = _repository.watchQueue().listen(
+     _queueSub = _repository.watchQueue(state.counter.id).listen(
       (queue) {
         _queueLoaded = true;
         emit(state.copyWith(queue: queue, status: _statusAfterData()));

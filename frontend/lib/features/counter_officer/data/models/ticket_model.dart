@@ -1,6 +1,7 @@
 import '../../domain/entities/ticket.dart';
 
 class TicketModel extends Ticket {
+  /// Counter che sta servendo il ticket (solo livello dati).
   final String? counterId;
 
   const TicketModel({
@@ -24,6 +25,31 @@ class TicketModel extends Ticket {
         status: TicketStatus.values.byName(json['status'] as String),
         counterId: json['counterId'] as String?,
       );
+
+  /// Formato dell'API REST. Il tipo di servizio non è nel ticket
+  /// (c'è solo `service_id`), quindi viene passato dall'esterno.
+  factory TicketModel.fromApi(
+    Map<String, dynamic> json, {
+    required String serviceType,
+  }) {
+    final servedAt = json['served_at'] as String?;
+    final counterId = json['counter_id'];
+    return TicketModel(
+      id: '${json['id']}',
+      code: json['code'] as String,
+      serviceType: serviceType,
+      arrivalTime: DateTime.parse(json['issued_at'] as String).toLocal(),
+      calledAt: servedAt == null ? null : DateTime.parse(servedAt).toLocal(),
+      status: _statusFromApi(json['status'] as String),
+      counterId: counterId == null ? null : '$counterId',
+    );
+  }
+
+  static TicketStatus _statusFromApi(String status) => switch (status) {
+        'called' => TicketStatus.serving,
+        'completed' => TicketStatus.completed,
+        _ => TicketStatus.waiting,
+      };
 
   Map<String, dynamic> toJson() => {
         'id': id,

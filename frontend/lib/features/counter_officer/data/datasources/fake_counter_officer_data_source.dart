@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import '../../domain/entities/queue_summary.dart';
 import '../../domain/entities/ticket.dart';
 import '../models/counter_model.dart';
 import '../models/ticket_model.dart';
 import 'counter_officer_data_source.dart';
 
+/// Implementazione in memoria, utile per sviluppo e test.
 class FakeCounterOfficerDataSource implements CounterOfficerDataSource {
   final _changes = StreamController<void>.broadcast();
 
@@ -55,6 +57,14 @@ class FakeCounterOfficerDataSource implements CounterOfficerDataSource {
     return list;
   }
 
+  QueueSummary _summary() {
+    final waiting = _waiting();
+    return QueueSummary(
+      waitingCount: waiting.length,
+      nextTicketCode: waiting.isEmpty ? null : waiting.first.code,
+    );
+  }
+
   @override
   Future<List<CounterModel>> getCounters() async {
     await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -70,10 +80,10 @@ class FakeCounterOfficerDataSource implements CounterOfficerDataSource {
   }
 
   @override
-  Stream<List<TicketModel>> watchWaitingTickets() async* {
-    yield _waiting();
+  Stream<QueueSummary> watchQueue(String counterId) async* {
+    yield _summary();
     await for (final _ in _changes.stream) {
-      yield _waiting();
+      yield _summary();
     }
   }
 

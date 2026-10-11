@@ -61,10 +61,12 @@ class CounterTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(counter.name, style: text.titleMedium),
-                    Text(
-                      counter.description,
-                      style: text.bodyMedium?.copyWith(color: AppColors.muted),
-                    ),
+                      if (counter.description.isNotEmpty)
+                      Text(
+                        counter.description,
+                        style:
+                            text.bodyMedium?.copyWith(color: AppColors.muted),
+                      ),
                   ],
                 ),
               ),

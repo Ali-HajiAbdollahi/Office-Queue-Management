@@ -13,6 +13,17 @@ class CounterModel extends Counter {
         description: json['description'] as String,
       );
 
+  /// Formato dell'API REST: `{ "id": 2, "name": "Counter 2" }`.
+  /// L'API non fornisce una descrizione, quindi resta vuota.
+  factory CounterModel.fromApi(Map<String, dynamic> json) {
+    final id = json['id'] as int;
+    return CounterModel(
+      id: '$id',
+      number: id,
+      description: (json['description'] as String?) ?? '',
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'number': number,

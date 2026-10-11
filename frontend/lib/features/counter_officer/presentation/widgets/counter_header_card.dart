@@ -50,10 +50,11 @@ class CounterHeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(counter.name, style: text.headlineSmall),
-          Text(
-            counter.description,
-            style: text.bodyMedium?.copyWith(color: AppColors.muted),
-          ),
+          if (counter.description.isNotEmpty)
+            Text(
+              counter.description,
+              style: text.bodyMedium?.copyWith(color: AppColors.muted),
+            ),
         ],
       ),
     );
