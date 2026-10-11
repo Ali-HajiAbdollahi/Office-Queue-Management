@@ -1,6 +1,8 @@
 const { query } = require('../db');
 const { tableNames } = require('../schema');
 
+ 
+
 // Mapping snake_case -> camelCase
 function toService(row) {
   return {
@@ -8,7 +10,10 @@ function toService(row) {
     tag: row.tag,
     serviceTime: row.service_time,
   };
+
 }
+
+ 
 
 // creates a service type and returns it
 // tag: name that identifies the service type, serviceTime: average time (in minutes) to process it
@@ -46,11 +51,17 @@ async function createService(tag, serviceTime) {
     );
     return toService(rows[0]);
   } catch (error) {
+    if (error.code === '23505' && error.constraint === 'uq_services_ticket_initial') {
+      const conflict = new Error(`Initial "${initial}" is already used by another service`);
+      conflict.code = 'SERVICE_INITIAL_CONFLICT';
+      throw conflict;
+    }
+
     // 23505 = unique_violation (services.tag is unique)
     if (error.code === '23505') throw new Error(`Service "${cleanTag}" already exists`);
     throw error;
   }
-}
+} 
 
 // returns the service with the given id, or null if it does not exist.
 async function getService(id) {
@@ -61,8 +72,10 @@ async function getService(id) {
      WHERE id = $1`,
     [id]
   );
+
   return rows.length ? toService(rows[0]) : null;
-}
+
+} 
 
 // returns all the services, ordered by id
 async function getServices() {
@@ -71,8 +84,10 @@ async function getServices() {
     `SELECT id, tag, service_time
      FROM ${t.services}
      ORDER BY id`
+
   );
   return rows.map(toService);
+
 }
 
 // import db by writing -> require('./dao/serviceDao')
