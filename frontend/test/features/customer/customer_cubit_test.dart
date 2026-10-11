@@ -12,7 +12,8 @@ import '../../helpers/stub_dio.dart';
 const _savedTicketKey = 'active_ticket_id';
 const _pollInterval = Duration(seconds: 5);
 
-Future<int?> _savedTicketId() async => (await SharedPreferences.getInstance()).getInt(_savedTicketKey);
+Future<int?> _savedTicketId() async =>
+    (await SharedPreferences.getInstance()).getInt(_savedTicketKey);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -51,28 +52,38 @@ void main() {
       expect((cubit.state as CustomerLoaded).activeTicket?.code, 'S-0004');
     });
 
-    test('shows an error when the services cannot be loaded', () async {
+    test('shows a friendly error when the services cannot be loaded', () async {
       repository.servicesError = Exception('offline');
 
       await cubit.loadInitialData();
 
       expect(cubit.state, isA<CustomerError>());
-      expect((cubit.state as CustomerError).message, contains('offline'));
+      expect(
+        (cubit.state as CustomerError).message,
+        'Cannot reach the office. Check your connection and try again.',
+      );
     });
   });
 
   group('getNewTicket', () {
-    test('issues a ticket for the chosen service, shows it and saves its id', () async {
-      await cubit.loadInitialData();
+    test(
+      'issues a ticket for the chosen service, shows it and saves its id',
+      () async {
+        await cubit.loadInitialData();
 
-      await cubit.getNewTicket(2);
+        await cubit.getNewTicket(2);
 
-      expect(repository.issuedFor, [2]);
-      final loaded = cubit.state as CustomerLoaded;
-      expect(loaded.activeTicket?.code, 'S-0001');
-      expect(loaded.services, hasLength(2), reason: 'the services stay available');
-      expect(await _savedTicketId(), 7);
-    });
+        expect(repository.issuedFor, [2]);
+        final loaded = cubit.state as CustomerLoaded;
+        expect(loaded.activeTicket?.code, 'S-0001');
+        expect(
+          loaded.services,
+          hasLength(2),
+          reason: 'the services stay available',
+        );
+        expect(await _savedTicketId(), 7);
+      },
+    );
 
     test('does nothing before the services are loaded', () async {
       await cubit.getNewTicket(1);
@@ -101,15 +112,22 @@ void main() {
       expect(repository.issuedFor, [1]);
     });
 
-    test('when the server rejects the request it shows an error and saves nothing', () async {
-      await cubit.loadInitialData();
-      repository.issueError = httpError(409);
+    test(
+      'when the server rejects the request it shows a friendly error and saves nothing',
+      () async {
+        await cubit.loadInitialData();
+        repository.issueError = httpError(409);
 
-      await cubit.getNewTicket(1);
+        await cubit.getNewTicket(1);
 
-      expect(cubit.state, isA<CustomerError>());
-      expect(await _savedTicketId(), isNull);
-    });
+        expect(cubit.state, isA<CustomerError>());
+        expect(
+          (cubit.state as CustomerError).message,
+          'Something went wrong. Please try again.',
+        );
+        expect(await _savedTicketId(), isNull);
+      },
+    );
   });
 
   group('ticket refresh every 5 seconds', () {
@@ -126,17 +144,46 @@ void main() {
 
     // Note: the real backend sends is_active = false as soon as the ticket is called (see test/e2e);
     // this only checks that a ticket that is still active is updated with the server data.
-    testWidgets('a ticket that is still active is updated with the server data', (tester) async {
-      await issueTicket(tester);
-      repository.statusResponses.add(customerTicket(status: TicketStatus.called, counterId: 2));
+    testWidgets(
+      'a ticket that is still active is updated with the server data',
+      (tester) async {
+        await issueTicket(tester);
+        repository.statusResponses.add(
+          customerTicket(status: TicketStatus.called, counterId: 2),
+        );
 
-      await tester.pump(_pollInterval);
+        await tester.pump(_pollInterval);
 
-      final ticket = (cubit.state as CustomerLoaded).activeTicket;
-      expect(ticket?.status, TicketStatus.called);
-      expect(ticket?.counterId, 2);
-      await cubit.close();
-    });
+        final ticket = (cubit.state as CustomerLoaded).activeTicket;
+        expect(ticket?.status, TicketStatus.called);
+        expect(ticket?.counterId, 2);
+        await cubit.close();
+      },
+    );
+
+    testWidgets(
+      'a called ticket stays visible even when the backend marks it inactive',
+      (tester) async {
+        await issueTicket(tester);
+        repository.statusResponses.add(
+          customerTicket(
+            status: TicketStatus.called,
+            counterId: 2,
+            isActive: false,
+          ),
+        );
+
+        await tester.pump(_pollInterval);
+        await tester.pump();
+
+        final ticket = (cubit.state as CustomerLoaded).activeTicket;
+        expect(ticket?.status, TicketStatus.called);
+        expect(ticket?.counterId, 2);
+        expect(ticket, isNotNull);
+        expect(await _savedTicketId(), 7);
+        await cubit.close();
+      },
+    );
 
     testWidgets('no request before 5 seconds', (tester) async {
       await issueTicket(tester);
@@ -149,34 +196,48 @@ void main() {
       await cubit.close();
     });
 
-    testWidgets('when the ticket is no longer active it is removed and forgotten', (tester) async {
-      await issueTicket(tester);
-      repository.statusResponses.add(customerTicket(isActive: false, status: TicketStatus.completed));
+    testWidgets(
+      'when the ticket is no longer active it is removed and forgotten',
+      (tester) async {
+        await issueTicket(tester);
+        repository.statusResponses.add(
+          customerTicket(isActive: false, status: TicketStatus.completed),
+        );
 
-      await tester.pump(_pollInterval);
-      await tester.pump();
+        await tester.pump(_pollInterval);
+        await tester.pump();
 
-      expect((cubit.state as CustomerLoaded).activeTicket, isNull);
-      expect(await _savedTicketId(), isNull);
+        expect((cubit.state as CustomerLoaded).activeTicket, isNull);
+        expect(await _savedTicketId(), isNull);
 
-      await tester.pump(_pollInterval * 2);
-      expect(repository.statusCalls, 1, reason: 'afterwards the refresh stops');
-      await cubit.close();
-    });
+        await tester.pump(_pollInterval * 2);
+        expect(
+          repository.statusCalls,
+          1,
+          reason: 'afterwards the refresh stops',
+        );
+        await cubit.close();
+      },
+    );
 
-    testWidgets('when the server no longer finds the ticket (404) it is removed and forgotten', (tester) async {
-      await issueTicket(tester);
-      repository.statusResponses.add(httpError(404));
+    testWidgets(
+      'when the server no longer finds the ticket (404) it is removed and forgotten',
+      (tester) async {
+        await issueTicket(tester);
+        repository.statusResponses.add(httpError(404));
 
-      await tester.pump(_pollInterval);
-      await tester.pump();
+        await tester.pump(_pollInterval);
+        await tester.pump();
 
-      expect((cubit.state as CustomerLoaded).activeTicket, isNull);
-      expect(await _savedTicketId(), isNull);
-      await cubit.close();
-    });
+        expect((cubit.state as CustomerLoaded).activeTicket, isNull);
+        expect(await _savedTicketId(), isNull);
+        await cubit.close();
+      },
+    );
 
-    testWidgets('a temporary network error does not remove the ticket', (tester) async {
+    testWidgets('a temporary network error does not remove the ticket', (
+      tester,
+    ) async {
       await issueTicket(tester);
       repository.statusResponses
         ..add(httpError(500))
@@ -187,8 +248,11 @@ void main() {
       expect(await _savedTicketId(), 7);
 
       await tester.pump(_pollInterval);
-      expect((cubit.state as CustomerLoaded).activeTicket?.status, TicketStatus.called,
-          reason: 'it retries on the next round');
+      expect(
+        (cubit.state as CustomerLoaded).activeTicket?.status,
+        TicketStatus.called,
+        reason: 'it retries on the next round',
+      );
       await cubit.close();
     });
 
