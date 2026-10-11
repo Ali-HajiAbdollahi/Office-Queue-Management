@@ -36,24 +36,25 @@ class UpNextCard extends StatelessWidget {
             Row(
               children: [
                 Text('Up Next', style: text.titleLarge),
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xxs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryTint,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    '${queue.waitingCount} in queue',
-                    style: text.labelLarge?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                // Queue statistics are hidden for this sprint.
+                // const SizedBox(width: AppSpacing.sm),
+                // Container(
+                //   padding: const EdgeInsets.symmetric(
+                //     horizontal: AppSpacing.sm,
+                //     vertical: AppSpacing.xxs,
+                //   ),
+                //   decoration: BoxDecoration(
+                //     color: AppColors.primaryTint,
+                //     borderRadius: BorderRadius.circular(AppRadius.pill),
+                //   ),
+                //   child: Text(
+                //     '${queue.waitingCount} in queue',
+                //     style: text.labelLarge?.copyWith(
+                //       color: AppColors.primary,
+                //       fontWeight: FontWeight.w700,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -65,8 +66,9 @@ class UpNextCard extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   // durante il caricamento il bottone resta blu
-                  disabledBackgroundColor:
-                      isBusy ? AppColors.primary : AppColors.border,
+                  disabledBackgroundColor: isBusy
+                      ? AppColors.primary
+                      : AppColors.border,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
@@ -88,27 +90,35 @@ class UpNextCard extends StatelessWidget {
                             child: Text(
                               'Call Next Ticket',
                               style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.w600),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          if (queue.nextTicketCode != null)
-                            Text(
-                              'Next: ${queue.nextTicketCode}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
-                            ),
+                          // Queue statistics are hidden for this sprint.
+                          // if (queue.nextTicketCode != null)
+                          //   Text(
+                          //     'Next: ${queue.nextTicketCode}',
+                          //     style: const TextStyle(
+                          //       fontWeight: FontWeight.w600,
+                          //     ),
+                          //   ),
                         ],
                       ),
               ),
             ),
             if (isServing) ...[
               const SizedBox(height: AppSpacing.xs),
-              Text('Complete the current ticket to call the next one.',
-                  style: text.labelSmall),
-            ] else if (queue.isEmpty) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text('The queue is empty.', style: text.labelSmall),
+              Text(
+                'Complete the current ticket to call the next one.',
+                style: text.labelSmall,
+              ),
             ],
+            // Queue statistics are hidden for this sprint.
+            // else if (queue.isEmpty) ...[
+            //   const SizedBox(height: AppSpacing.xs),
+            //   Text('The queue is empty.', style: text.labelSmall),
+            // ],
           ],
         ),
       ),
