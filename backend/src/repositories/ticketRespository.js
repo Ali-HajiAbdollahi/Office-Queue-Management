@@ -1,82 +1,80 @@
-const { Pool } = require("pg");
+const { getPool, query } = require('../db');
+const { tableNames } = require('../schema');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+const OFFICE_TIME_ZONE = 'Europe/Rome';
+const OFFICE_RESET_HOUR = 6;
 
+function businessDay(column) {
+  return `((${column} AT TIME ZONE $1) - make_interval(hours => $2))::date`;
+}
 
 async function callNextTicket(counterId) {
-  const client = await pool.connect();
+  const { counters, services, counter_services: counterServices, tickets } = tableNames();
+  const client = await getPool().connect();
 
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
-    // Confirm that the counter exists and lock it to serialize calls from this counter.
     const counterResult = await client.query(
       `SELECT id
-       FROM "schema_OQM".counters
+       FROM ${counters}
        WHERE id = $1
        FOR UPDATE`,
       [counterId]
     );
 
     if (counterResult.rowCount === 0) {
-      const error = new Error("Counter not found");
-      error.code = "COUNTER_NOT_FOUND";
+      const error = new Error('Counter not found');
+      error.code = 'COUNTER_NOT_FOUND';
       throw error;
     }
 
-    
     const serviceResult = await client.query(
       `SELECT
          s.id,
          s.service_time,
          COUNT(t.id)::int AS waiting_count
-       FROM "schema_OQM".counter_services AS cs
-       JOIN "schema_OQM".services AS s
+       FROM ${counterServices} AS cs
+       JOIN ${services} AS s
          ON s.id = cs.service_id
-       LEFT JOIN "schema_OQM".tickets AS t
+       LEFT JOIN ${tickets} AS t
          ON t.service_id = s.id
         AND t.status = 'waiting'
-       WHERE cs.counter_id = $1
+        AND ${businessDay('t.issued_at')} = ${businessDay('statement_timestamp()')}
+       WHERE cs.counter_id = $3
        GROUP BY s.id, s.service_time
        HAVING COUNT(t.id) > 0
        ORDER BY waiting_count DESC, s.service_time ASC, s.id ASC
        LIMIT 1`,
-      [counterId]
+      [OFFICE_TIME_ZONE, OFFICE_RESET_HOUR, counterId]
     );
 
-    
     if (serviceResult.rowCount === 0) {
-      await client.query("COMMIT");
+      await client.query('COMMIT');
       return null;
     }
 
     const serviceId = serviceResult.rows[0].id;
-
-    
     const ticketResult = await client.query(
       `SELECT id
-       FROM "schema_OQM".tickets
-       WHERE service_id = $1
+       FROM ${tickets}
+       WHERE service_id = $3
          AND status = 'waiting'
+         AND ${businessDay('issued_at')} = ${businessDay('statement_timestamp()')}
        ORDER BY issued_at ASC, id ASC
        LIMIT 1
        FOR UPDATE`,
-      [serviceId]
+      [OFFICE_TIME_ZONE, OFFICE_RESET_HOUR, serviceId]
     );
 
     if (ticketResult.rowCount === 0) {
-      await client.query("COMMIT");
+      await client.query('COMMIT');
       return null;
     }
 
     const ticketId = ticketResult.rows[0].id;
-
-   
     const updatedResult = await client.query(
-      `UPDATE "schema_OQM".tickets
+      `UPDATE ${tickets}
        SET status = 'called',
            counter_id = $2,
            served_at = NOW()
@@ -85,10 +83,14 @@ async function callNextTicket(counterId) {
       [ticketId, counterId]
     );
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
     return updatedResult.rows[0];
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query('ROLLBACK');
+    } catch (_) {
+      // Preserve the original error.
+    }
     throw error;
   } finally {
     client.release();
@@ -96,8 +98,9 @@ async function callNextTicket(counterId) {
 }
 
 async function completeTicket(ticketId) {
-  const updatedResult = await pool.query(
-    `UPDATE "schema_OQM".tickets
+  const { tickets } = tableNames();
+  const updatedResult = await query(
+    `UPDATE ${tickets}
      SET status = 'completed'
      WHERE id = $1
        AND status = 'called'
@@ -109,28 +112,29 @@ async function completeTicket(ticketId) {
     return updatedResult.rows[0];
   }
 
-  const existingResult = await pool.query(
+  const existingResult = await query(
     `SELECT id, status
-     FROM "schema_OQM".tickets
+     FROM ${tickets}
      WHERE id = $1`,
     [ticketId]
   );
 
   if (existingResult.rowCount === 0) {
-    const error = new Error("Ticket not found");
-    error.code = "TICKET_NOT_FOUND";
+    const error = new Error('Ticket not found');
+    error.code = 'TICKET_NOT_FOUND';
     throw error;
   }
 
-  const error = new Error("Ticket must be called before it can be completed");
-  error.code = "TICKET_NOT_CALLED";
+  const error = new Error('Ticket must be called before it can be completed');
+  error.code = 'TICKET_NOT_CALLED';
   throw error;
 }
 
 async function listCounters() {
-  const result = await pool.query(
+  const { counters } = tableNames();
+  const result = await query(
     `SELECT id, name
-     FROM "schema_OQM".counters
+     FROM ${counters}
      ORDER BY id ASC`
   );
 
@@ -138,4 +142,3 @@ async function listCounters() {
 }
 
 module.exports = { callNextTicket, completeTicket, listCounters };
-

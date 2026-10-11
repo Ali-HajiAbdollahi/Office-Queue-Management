@@ -1,0 +1,35 @@
+services:
+
+  db:
+
+    image: postgres:16
+
+    environment:
+
+      POSTGRES_USER: oqm
+
+      POSTGRES_PASSWORD: oqm_dev_password
+
+      POSTGRES_DB: oqm
+
+    ports:
+
+      - "127.0.0.1:5432:5432"
+
+    volumes:
+
+      - oqm_data:/var/lib/postgresql/data
+
+    healthcheck:
+
+      test: ["CMD-SHELL", "pg_isready -U oqm -d oqm"]
+
+      interval: 3s
+
+      timeout: 3s
+
+      retries: 10
+
+volumes:
+
+  oqm_data:
