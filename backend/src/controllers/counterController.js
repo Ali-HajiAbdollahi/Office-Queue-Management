@@ -55,4 +55,13 @@ async function completeTicket(req, res, next) {
   }
 }
 
-module.exports = { callNext, completeTicket };
+async function getCounters(req, res, next) {
+  try {
+    const counters = await counterService.listCounters();
+    return res.status(200).json(counters);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = { callNext, completeTicket, getCounters };

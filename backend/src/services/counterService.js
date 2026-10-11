@@ -8,4 +8,8 @@ async function completeTicket(ticketId) {
   return ticketRepository.completeTicket(ticketId);
 }
 
-module.exports = { callNextTicket, completeTicket };
+async function listCounters() {
+  return ticketRepository.listCounters();
+}
+
+module.exports = { callNextTicket, completeTicket, listCounters };

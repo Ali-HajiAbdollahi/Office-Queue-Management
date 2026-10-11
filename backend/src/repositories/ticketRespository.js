@@ -127,5 +127,15 @@ async function completeTicket(ticketId) {
   throw error;
 }
 
-module.exports = { callNextTicket, completeTicket };
+async function listCounters() {
+  const result = await pool.query(
+    `SELECT id, name
+     FROM "schema_OQM".counters
+     ORDER BY id ASC`
+  );
+
+  return result.rows;
+}
+
+module.exports = { callNextTicket, completeTicket, listCounters };
 
