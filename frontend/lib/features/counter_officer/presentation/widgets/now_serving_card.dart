@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:frontend/core/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/constants/app_radius.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/utils/context_extensions.dart';
 
 import '../../domain/entities/ticket.dart';
 
@@ -19,18 +22,18 @@ class NowServingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final text = context.textTheme;
     final t = ticket;
 
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           Container(height: 4, color: AppColors.primary),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: t == null ? _empty(text) : _content(text, t),
           ),
         ],
@@ -42,16 +45,16 @@ class NowServingCard extends StatelessWidget {
         width: double.infinity,
         child: Column(
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             const Icon(Icons.hourglass_empty,
-                size: 40, color: AppColors.textSecondary),
-            const SizedBox(height: 12),
-            Text('No ticket being served',
-                style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            Text('Call the next ticket to start',
-                style: text.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 16),
+                size: 40, color: AppColors.muted),
+            const SizedBox(height: AppSpacing.sm),
+            Text('No ticket being served', style: text.titleMedium),
+            Text(
+              'Call the next ticket to start',
+              style: text.bodyMedium?.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       );
@@ -62,53 +65,61 @@ class NowServingCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _Chip(
+              const _Chip(
                 icon: Icons.record_voice_over_outlined,
                 label: 'NOW SERVING',
                 color: AppColors.primary,
-                background: AppColors.primarySoft,
+                background: AppColors.primaryTint,
               ),
               if (t.calledAt != null) _ElapsedTimer(since: t.calledAt!),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.canvas,
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Text(
               t.code,
               textAlign: TextAlign.center,
-              style: text.displayMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: text.displayLarge,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              Expanded(child: _InfoBox(label: 'Service Type', value: t.serviceType)),
-              const SizedBox(width: 12),
               Expanded(
-                  child: _InfoBox(
-                      label: 'Arrival Time', value: _formatTime(t.arrivalTime))),
+                child: _InfoBox(label: 'Service Type', value: t.serviceType),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _InfoBox(
+                  label: 'Arrival Time',
+                  value: _formatTime(t.arrivalTime),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           SizedBox(
             width: double.infinity,
             height: 52,
             child: FilledButton.icon(
               onPressed: canComplete ? onComplete : null,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.success,
+                backgroundColor: AppColors.tertiary,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
               ),
               icon: const Icon(Icons.check_circle_outline),
-              label: const Text('Done / Complete',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              label: const Text(
+                'Done / Complete',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -136,21 +147,27 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
-            Text(label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8)),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              label,
+              style: context.textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
+            ),
           ],
         ),
       );
@@ -163,27 +180,26 @@ class _InfoBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final text = context.textTheme;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.canvas,
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: text.labelMedium?.copyWith(color: AppColors.textSecondary)),
-          const SizedBox(height: 4),
-          Text(value,
-              style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(label, style: text.labelSmall),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(value, style: text.titleMedium),
         ],
       ),
     );
   }
 }
 
+/// Mostra mm:ss trascorsi da quando il ticket è stato chiamato.
 class _ElapsedTimer extends StatefulWidget {
   final DateTime since;
   const _ElapsedTimer({required this.since});
@@ -217,8 +233,8 @@ class _ElapsedTimerState extends State<_ElapsedTimer> {
     return _Chip(
       icon: Icons.timer_outlined,
       label: '$mm:$ss',
-      color: AppColors.textSecondary,
-      background: AppColors.surfaceMuted,
+      color: AppColors.muted,
+      background: AppColors.iconNeutral,
     );
   }
 }

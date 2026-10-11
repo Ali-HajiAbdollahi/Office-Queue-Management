@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/core/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/constants/app_radius.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/utils/context_extensions.dart';
 
 import '../../domain/entities/counter.dart';
 
@@ -9,32 +12,35 @@ class CounterHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final text = context.textTheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.iconNeutral,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.circle, size: 10, color: AppColors.success),
-                const SizedBox(width: 8),
+                const Icon(Icons.circle, size: 10, color: AppColors.tertiary),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   'ACTIVE & ONLINE',
-                  style: text.labelMedium?.copyWith(
-                    color: AppColors.success,
+                  style: text.labelSmall?.copyWith(
+                    color: AppColors.tertiary,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
                   ),
@@ -42,11 +48,12 @@ class CounterHeaderCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          Text(counter.name,
-              style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-          Text(counter.description,
-              style: text.bodyMedium?.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.sm),
+          Text(counter.name, style: text.headlineSmall),
+          Text(
+            counter.description,
+            style: text.bodyMedium?.copyWith(color: AppColors.muted),
+          ),
         ],
       ),
     );

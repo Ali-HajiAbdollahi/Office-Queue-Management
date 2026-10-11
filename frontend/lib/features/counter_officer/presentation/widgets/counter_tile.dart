@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/core/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/constants/app_radius.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/utils/context_extensions.dart';
 
 import '../../domain/entities/counter.dart';
 
@@ -17,11 +20,13 @@ class CounterTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final text = context.textTheme;
+    final shape = BorderRadius.circular(AppRadius.lg);
+
     return Material(
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: shape,
         side: BorderSide(
           color: selected ? AppColors.primary : AppColors.border,
           width: selected ? 2 : 1,
@@ -29,9 +34,9 @@ class CounterTile extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: shape,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
               Container(
@@ -39,35 +44,34 @@ class CounterTile extends StatelessWidget {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.primary : AppColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(6),
+                  color: selected ? AppColors.primary : AppColors.iconNeutral,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
                   '${counter.number}',
                   style: text.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : AppColors.textPrimary,
+                    color: selected ? Colors.white : null,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(counter.name,
-                        style: text.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    Text(counter.description,
-                        style: text.bodyMedium
-                            ?.copyWith(color: AppColors.textSecondary)),
+                    Text(counter.name, style: text.titleMedium),
+                    Text(
+                      counter.description,
+                      style: text.bodyMedium?.copyWith(color: AppColors.muted),
+                    ),
                   ],
                 ),
               ),
               Icon(
                 selected ? Icons.check_circle : Icons.radio_button_unchecked,
                 size: 28,
-                color: selected ? AppColors.primary : const Color(0xFFC5C6D0),
+                color: selected ? AppColors.primary : AppColors.border,
               ),
             ],
           ),

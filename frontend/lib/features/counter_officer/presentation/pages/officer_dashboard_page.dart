@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend/core/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/utils/context_extensions.dart';
 
 import '../../domain/entities/counter.dart';
 import '../../domain/repositories/counter_officer_repository.dart';
@@ -41,7 +43,7 @@ class _OfficerDashboardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final text = context.textTheme;
 
     return BlocConsumer<OfficerDashboardCubit, OfficerDashboardState>(
       // La snackbar serve per gli errori delle azioni (Call Next / Done).
@@ -57,8 +59,7 @@ class _OfficerDashboardView extends StatelessWidget {
           ..showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
-              backgroundColor:
-                  isNoTickets ? null : Theme.of(context).colorScheme.error,
+              backgroundColor: isNoTickets ? null : AppColors.danger,
             ),
           );
       },
@@ -71,11 +72,10 @@ class _OfficerDashboardView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('QueueFlow',
-                    style:
-                        text.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                    style: text.titleMedium?.copyWith(
+                        fontSize: 20, fontWeight: FontWeight.w700)),
                 Text('MY DESK',
-                    style: text.labelSmall?.copyWith(
-                        color: AppColors.textSecondary, letterSpacing: 1.2)),
+                    style: text.labelSmall?.copyWith(letterSpacing: 1.2)),
               ],
             ),
           ),
@@ -87,16 +87,16 @@ class _OfficerDashboardView extends StatelessWidget {
                 onRetry: cubit.start,
               ),
             OfficerDashboardStatus.ready => ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 children: [
                   CounterHeaderCard(counter: state.counter),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
                   NowServingCard(
                     ticket: state.currentTicket,
                     canComplete: state.canComplete,
                     onComplete: cubit.complete,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
                   UpNextCard(
                     queue: state.queue,
                     canCallNext: state.canCallNext,

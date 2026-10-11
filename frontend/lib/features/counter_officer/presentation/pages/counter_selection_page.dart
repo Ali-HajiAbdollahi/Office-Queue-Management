@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend/core/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/constants/app_radius.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/utils/context_extensions.dart';
 
 import '../../domain/repositories/counter_officer_repository.dart';
 import '../../domain/usecases/get_counters.dart';
@@ -28,7 +31,7 @@ class _CounterSelectionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final text = context.textTheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -42,16 +45,20 @@ class _CounterSelectionView extends StatelessWidget {
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
                   children: [
-                    Text('Select Counter',
-                        style: text.headlineLarge
-                            ?.copyWith(fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 4),
-                    Text('Choose your counter to sign in',
-                        style: text.titleMedium
-                            ?.copyWith(color: AppColors.textSecondary)),
-                    const SizedBox(height: 16),
+                    Text('Select Counter', style: text.headlineLarge),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'Choose your counter to sign in',
+                      style: text.bodyLarge?.copyWith(color: AppColors.muted),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     ..._body(context, state),
                   ],
                 ),
@@ -69,13 +76,13 @@ class _CounterSelectionView extends StatelessWidget {
       case CounterSelectionStatus.loading:
         return const [
           Padding(
-            padding: EdgeInsets.only(top: 48),
+            padding: EdgeInsets.only(top: AppSpacing.xxl),
             child: Center(child: CircularProgressIndicator()),
           ),
         ];
       case CounterSelectionStatus.failure:
         return [
-          const SizedBox(height: 48),
+          const SizedBox(height: AppSpacing.xxl),
           const Center(child: Text('Could not load counters')),
           Center(
             child: TextButton(
@@ -92,7 +99,7 @@ class _CounterSelectionView extends StatelessWidget {
               selected: state.selected?.id == c.id,
               onTap: () => context.read<CounterSelectionCubit>().select(c),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ];
     }
@@ -107,11 +114,15 @@ class _ContinueBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = state.selected;
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         boxShadow: [
-          BoxShadow(color: Color(0x1A000000), blurRadius: 16, offset: Offset(0, -4)),
+          BoxShadow(
+            color: AppColors.secondary.withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: SafeArea(
@@ -130,7 +141,8 @@ class _ContinueBar extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -143,7 +155,7 @@ class _ContinueBar extends StatelessWidget {
                       fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 if (selected != null) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.xs),
                   const Icon(Icons.arrow_forward, size: 20),
                 ],
               ],

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/core/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/constants/app_radius.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/utils/context_extensions.dart';
 
 import '../../domain/entities/queue_summary.dart';
 
@@ -21,27 +24,28 @@ class UpNextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final text = context.textTheme;
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Text('Up Next',
-                    style:
-                        text.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(width: 10),
+                    style: text.titleMedium?.copyWith(fontSize: 20)),
+                const SizedBox(width: AppSpacing.sm),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xxs,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppColors.primaryTint,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     '${queue.waitingCount} in queue',
@@ -53,7 +57,7 @@ class UpNextCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -61,10 +65,12 @@ class UpNextCard extends StatelessWidget {
                 onPressed: canCallNext ? onCallNext : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  // durante il caricamento il bottone resta blu
                   disabledBackgroundColor:
-                      isBusy ? AppColors.primary : const Color(0xFFE1E2E4),
+                      isBusy ? AppColors.primary : AppColors.border,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
                 ),
                 child: isBusy
                     ? const SizedBox(
@@ -78,7 +84,7 @@ class UpNextCard extends StatelessWidget {
                     : Row(
                         children: [
                           const Icon(Icons.play_arrow_rounded, size: 28),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.sm),
                           const Expanded(
                             child: Text(
                               'Call Next Ticket',
@@ -97,15 +103,12 @@ class UpNextCard extends StatelessWidget {
               ),
             ),
             if (isServing) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               Text('Complete the current ticket to call the next one.',
-                  style: text.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary)),
+                  style: text.labelSmall),
             ] else if (queue.isEmpty) ...[
-              const SizedBox(height: 8),
-              Text('The queue is empty.',
-                  style: text.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: AppSpacing.xs),
+              Text('The queue is empty.', style: text.labelSmall),
             ],
           ],
         ),
