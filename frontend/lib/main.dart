@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/counter_officer/data/datasources/remote_counter_officer_data_source.dart';
@@ -15,7 +16,7 @@ import 'features/role_selection/presentation/pages/role_selection_page.dart';
 void main() {
   const apiBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000',
   );
 
   final dio = Dio(
