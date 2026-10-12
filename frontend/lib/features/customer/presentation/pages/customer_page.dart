@@ -108,6 +108,9 @@ class _CustomerContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeTicket = state.activeTicket;
+    final serviceName = activeTicket != null
+        ? _serviceNameForTicket(state.services, activeTicket.serviceId)
+        : null;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(12, 64, 12, 96),
@@ -117,7 +120,11 @@ class _CustomerContent extends StatelessWidget {
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ActiveTicketCard(ticket: activeTicket, onCancel: onCancel),
+                  _ActiveTicketCard(
+                    ticket: activeTicket,
+                    serviceName: serviceName ?? 'Service',
+                    onCancel: onCancel,
+                  ),
                   const SizedBox(height: 24),
                   const _DeskTipNote(),
                 ],
@@ -125,7 +132,10 @@ class _CustomerContent extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ServicesHeader(onInfoTap: onInfoTap),
+                  _ServicesHeader(
+                    availableCount: state.services.length,
+                    onInfoTap: onInfoTap,
+                  ),
                   const SizedBox(height: 12),
                   ...state.services.map(
                     (service) => Padding(
@@ -146,6 +156,37 @@ class _CustomerContent extends StatelessWidget {
       ),
     );
   }
+}
+
+String _serviceNameForTicket(List<dynamic> services, int serviceId) {
+  for (final service in services) {
+    if (service.id == serviceId) {
+      return service.tag;
+    }
+  }
+  return 'Service';
+}
+
+String _formatQueuePosition(int? queueLength) {
+  final position = queueLength ?? 1;
+  final ordinal = switch (position % 100) {
+    11 || 12 || 13 => 'th',
+    _ => switch (position % 10) {
+      1 => 'st',
+      2 => 'nd',
+      3 => 'rd',
+      _ => 'th',
+    },
+  };
+  return '$position$ordinal';
+}
+
+String _formatIssuedTime(DateTime issuedAt) {
+  final local = issuedAt.toLocal();
+  final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+  final minute = local.minute.toString().padLeft(2, '0');
+  final suffix = local.hour >= 12 ? 'PM' : 'AM';
+  return '$hour:$minute $suffix';
 }
 
 IconData _serviceIcon(int serviceId) {
@@ -243,9 +284,14 @@ class _CustomerHeader extends StatelessWidget {
 }
 
 class _ActiveTicketCard extends StatelessWidget {
-  const _ActiveTicketCard({required this.ticket, required this.onCancel});
+  const _ActiveTicketCard({
+    required this.ticket,
+    required this.serviceName,
+    required this.onCancel,
+  });
 
   final TicketEntity ticket;
+  final String serviceName;
   final VoidCallback onCancel;
 
   @override
@@ -302,7 +348,7 @@ class _ActiveTicketCard extends StatelessWidget {
                                 ),
                           ),
                           Text(
-                            'Municipal Services & Permits',
+                            serviceName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall
@@ -335,23 +381,18 @@ class _ActiveTicketCard extends StatelessWidget {
                     color: AppColors.neutral,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Expanded(
                         child: _TicketMetric(
                           label: 'QUEUE POSITION',
-                          value: '3rd',
+                          value: _formatQueuePosition(ticket.queueLength),
                           suffix: 'in line',
+                          valueColor: AppColors.text,
                         ),
                       ),
-                      Expanded(
-                        child: _TicketMetric(
-                          label: 'EST. WAIT TIME',
-                          value: '~8',
-                          suffix: 'mins',
-                          valueColor: AppColors.primary,
-                        ),
-                      ),
+                      // Wait estimate is not available from the backend yet.
+                      const Expanded(child: SizedBox.shrink()),
                     ],
                   ),
                 ),
@@ -359,9 +400,13 @@ class _ActiveTicketCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Expanded(child: _CheckInLabel()),
+                    Expanded(
+                      child: _CheckInLabel(
+                        checkedInAt: _formatIssuedTime(ticket.issuedAt),
+                      ),
+                    ),
                     TextButton.icon(
-                      onPressed: onCancel,
+                      onPressed: null,
                       icon: const Icon(Icons.cancel_outlined, size: 14),
                       label: const Text('Cancel Ticket'),
                       style: TextButton.styleFrom(
@@ -387,8 +432,12 @@ class _ActiveTicketCard extends StatelessWidget {
 }
 
 class _ServicesHeader extends StatelessWidget {
-  const _ServicesHeader({required this.onInfoTap});
+  const _ServicesHeader({
+    required this.availableCount,
+    required this.onInfoTap,
+  });
 
+  final int availableCount;
   final VoidCallback onInfoTap;
 
   @override
@@ -437,7 +486,7 @@ class _ServicesHeader extends StatelessWidget {
               letterSpacing: 0.66,
             ),
           ),
-          child: const Text('4 AVAILABLE'),
+          child: Text('$availableCount AVAILABLE'),
         ),
       ],
     );
@@ -786,7 +835,7 @@ class _TicketMetric extends StatelessWidget {
     required this.label,
     required this.value,
     required this.suffix,
-    this.valueColor = AppColors.text,
+    required this.valueColor,
   });
 
   final String label;
@@ -835,7 +884,9 @@ class _TicketMetric extends StatelessWidget {
 }
 
 class _CheckInLabel extends StatelessWidget {
-  const _CheckInLabel();
+  const _CheckInLabel({required this.checkedInAt});
+
+  final String checkedInAt;
 
   @override
   Widget build(BuildContext context) {
@@ -845,7 +896,7 @@ class _CheckInLabel extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            'Checked-in at 10:42 AM',
+            'Checked-in at $checkedInAt',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(

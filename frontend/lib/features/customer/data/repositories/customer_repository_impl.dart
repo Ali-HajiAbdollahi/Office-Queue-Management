@@ -13,16 +13,21 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<List<ServiceEntity>> getServices() async {
     final response = await dio.get('/api/services');
-    return (response.data as List).map((json) => ServiceEntity(
-      id: (json['id'] as num).toInt(),
-      tag: json['tag'] as String,
-      serviceTime: (json['service_time'] as num).toInt(),
-    )).toList();
+    return (response.data as List)
+        .map(
+          (json) => ServiceEntity(
+            id: (json['id'] as num).toInt(),
+            tag: json['tag'] as String,
+            serviceTime: (json['service_time'] as num).toInt(),
+          ),
+        )
+        .toList();
   }
 
   @override
   Future<TicketEntity> issueTicket(int serviceId) async {
-    final response = await dio.post('/api/tickets',
+    final response = await dio.post(
+      '/api/tickets',
       data: {'service_id': serviceId},
       options: Options(contentType: Headers.jsonContentType),
     );
@@ -43,11 +48,15 @@ class CustomerRepositoryImpl implements CustomerRepository {
     if (id == null) return null;
     try {
       final ticket = await getTicketStatus(id);
-      if (ticket.isActive) return ticket;
+      if (ticket.isActive || ticket.status == TicketStatus.called) {
+        return ticket;
+      }
       await prefs.remove('active_ticket_id');
       return null;
     } on DioException catch (error) {
-      if (error.response?.statusCode != 404) rethrow;
+      if (error.response?.statusCode != 404) {
+        rethrow;
+      }
       await prefs.remove('active_ticket_id');
       return null;
     }
@@ -56,7 +65,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
   // Keep the interface, but disable the cancellation control in this sprint.
   @override
   Future<void> cancelTicket(int ticketId) async {
-    throw UnsupportedError('Ticket cancellation is not implemented in this scope');
+    throw UnsupportedError(
+      'Ticket cancellation is not implemented in this scope',
+    );
   }
 
   TicketEntity _ticketFromJson(Map<String, dynamic> json) {
@@ -65,7 +76,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
       'served' => TicketStatus.completed,
       'called' => TicketStatus.called,
       'completed' => TicketStatus.completed,
-       _ => throw FormatException('Unknown ticket status: ${json['status']}'),
+      _ => throw FormatException('Unknown ticket status: ${json['status']}'),
     };
 
     return TicketEntity(
@@ -75,7 +86,8 @@ class CustomerRepositoryImpl implements CustomerRepository {
       status: status,
       issuedAt: DateTime.parse(json['issued_at'] as String),
       servedAt: json['served_at'] == null
-          ? null : DateTime.parse(json['served_at'] as String),
+          ? null
+          : DateTime.parse(json['served_at'] as String),
       counterId: (json['counter_id'] as num?)?.toInt(),
       isActive: json['is_active'] as bool,
       queueLength: (json['queue_length'] as num?)?.toInt(),

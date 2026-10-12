@@ -13,9 +13,14 @@ import 'features/customer/presentation/pages/customer_page.dart';
 import 'features/role_selection/presentation/pages/role_selection_page.dart';
 
 void main() {
+  const apiBaseUrl = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://10.0.2.2:3000',
+  );
+
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'http://10.0.2.2:3000',
+      baseUrl: apiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),
@@ -24,7 +29,7 @@ void main() {
   final customerRepository = CustomerRepositoryImpl(dio: dio);
   final counterOfficerRepository = CounterOfficerRepositoryImpl(
     RemoteCounterOfficerDataSource(
-      Dio(BaseOptions(baseUrl: 'http://10.0.2.2:3000/api')),
+      Dio(BaseOptions(baseUrl: '$apiBaseUrl/api')),
     ),
   );
 
